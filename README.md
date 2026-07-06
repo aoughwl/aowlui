@@ -1,14 +1,30 @@
 # ui
 
-Raw `.aowl` source mirror for the `aoughwl/ui` pack.
+Raw `.aowl` source repo for the `aoughwl/ui` pack.
 
-This repo intentionally publishes only the UI pack source files and component
-references, not the full monorepo checkout.
+This repo publishes the UI package itself as the repo root.
 
 Main entry points:
 
-- `packs/aoughwl/ui.aowl`
-- `packs/aoughwl/ui/theme.aowl`
-- `packs/aoughwl/ui/variants.aowl`
-- `packs/aoughwl/ui/components/`
-- `scripts/component.aowl`
+- `ui.aowl`
+- `theme.aowl`
+- `variants.aowl`
+- `components/`
+
+Public surface:
+
+- `renderTheme()` for the token stylesheet
+- `renderStylesheet()` for the scoped component styles
+- `styleErrors()` for CSS validation feedback
+- `button()`, `iconButton()`, `textInput()`, `badge()`, `pill()`, `avatar()`,
+  `divider()`, `card()`, `surface()`, `stack()`, `cluster()`, `sidebar()`,
+  `toolbar()`, `menuItem()`, `sectionHeader()`, `formField()`, `stat()`,
+  `meter()`, `progressBar()`, `callout()`, `toast()`, `dialog()`,
+  `emptyState()`, `codeBlock()`, `tab()`, `tabs()`, and `breadcrumb()`
+
+Notes:
+
+- The public API stays plain-name, without the old `ui` prefix.
+- Theme tokens live in `theme.aowl`.
+- New components should reuse the existing `web:` DSL shape so styling and
+  pseudo-state handling stay consistent across the pack.

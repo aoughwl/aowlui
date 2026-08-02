@@ -77,6 +77,75 @@ This gate earns its keep. It caught the port silently turning every
 declaration counts matched exactly (1739 = 1739) while the design was broken,
 which is precisely the failure a count-based or eyeball check would have passed.
 
+## The kit
+
+`import kit` — a technical UI kit whose entire theme is a handful of CSS
+variables.
+
+```nim
+useStylesheet kitSheet()
+echo document("app", @[shell(top, body, bottom)],
+              css = renderTheme() & renderReset())
+```
+
+### Theming is two ramps and two numbers
+
+| variable | does |
+| --- | --- |
+| `--primary` / `--secondary` / `--tertiary` | ink: content, labels, hints |
+| `--bg` / `--bg-2` / `--bg-3` | surfaces: page, panel, inset |
+| `--accent`, `--danger` | the only saturated colours |
+| **`--scale`** | **multiplies every length in the system** |
+| **`--round`** | **multiplies every corner** |
+
+Each tertiary is optional: leave it `""` and it falls back to the secondary.
+
+`--scale` reaches everything because every length derives from `--u`
+(`scale × unit`) and the multiplication happens in `calc()` in the browser — so
+`--scale: 1.25` resizes the whole UI at runtime, with no recompile and no
+component touched. `--round: 0` squares the kit; `--round: 2` doubles every
+radius. Type scales too, so a larger UI is not just a more spaced-out one.
+
+**One deliberate exception.** `--hair` (1px) and `--rail` (2px) do *not* scale: a
+border that scales stops reading as a hairline and the surface stops looking
+precise. They are still tokens, so a theme can thicken them — what is forbidden
+is a rule spelling `2px` itself and quietly opting out.
+
+### What holds the components together
+
+- **Selection is one language.** `.is-selected` is a `--rail` accent edge over a
+  12% accent wash, and it is the *same rule* for a tree row, a tab, a list item
+  and a menu item.
+- **Three surfaces, no more.** Depth past that is a hairline, never another grey.
+  `--shadow` is spent only on things that genuinely float — window, dialog, menu,
+  toast — so a shadow always means "above the page".
+- **Focus is never invisible**: one `:focus-visible` rule covers the kit.
+- **Uniform API**: containers take `children: HTML` last so `web:` blocks drop
+  in; every component takes `extra = ""` for caller classes; state is a `bool`,
+  never a pre-spelled class string.
+
+### Components
+
+`shell` `window` `panes` `pane` `splitter` `toolbar` `toolbarSep`
+`toolbarSpacer` `statusBar` `statusItem` `sidebar` `explorer` `treeItem` `tabs`
+`tab` `crumbs` `menu` `menuItem` `menuSep` `inspector` `inspRow` `list`
+`listItem` `well` `code` `button` `iconButton` `input` `textarea` `field` `chip`
+`dot` `meter` `scrim` `dialog` `toast` `callout` `empty` `row` `col` `pad`
+`spacer`
+
+### Gated
+
+`tests/tkit.nim` asserts the system rather than the look:
+
+- **no rule hard-codes a length** — it greps the emitted CSS for raw `px`, so a
+  rule that opted out of `--scale` fails the build (**0** in 93 rules);
+- **the theme is one knob** — changing `scale`/`roundness` moves `:root` and
+  leaves component CSS byte-identical, because components never see a number;
+- **every declaration is valid CSS** (**0** errors across 93 rules).
+
+`tests/tdemo.nim` writes `demo.html` — the kit rendered as a devtools surface,
+to open and look at.
+
 ## The component pack
 
 The pack proper — 27 components, all spelled with the `web:` DSL, public API

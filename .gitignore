@@ -1,3 +1,4 @@
 nimcache/
 *.nif
 *.o
+demo.html

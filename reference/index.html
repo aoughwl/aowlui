@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" sizes="any" />
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2" />
+<title>aoughwl</title>
+
+<!-- Restore per-app boot look BEFORE first paint (mirrors host.js's theme restore,
+     but earlier — this runs in <head>, before awcore.js even downloads). The boot
+     screen below is agnostic by default; an app skins it by persisting these tokens
+     (e.g. from its Settings widget), and they carry on every subsequent load. -->
+<script>
+  try {
+    var d = document.documentElement, L = localStorage, t = L.getItem("aw-theme");
+    if (t) d.setAttribute("data-theme", t);
+    [["--boot-bg","aw-boot-bg"],["--boot-fg","aw-boot-fg"],["--boot-accent","aw-boot-accent"]]
+      .forEach(function (p) { var v = L.getItem(p[1]); if (v != null) d.style.setProperty(p[0], v); });
+  } catch (e) {}
+</script>
+
+<!-- The ONLY CSS shipped in the page: a self-contained boot overlay so the very
+     first paint says "working" instead of a dead flat color, even while the 960KB
+     kernel parses. The real theme still loads FROM THE SUBSTRATE (theme.pack →
+     loads_style "/styles/base.css"); this is replaced the moment the app renders.
+     It's app-agnostic — driven by --boot-* tokens with neutral fallbacks. -->
+<style>
+  :root { --boot-bg:#101214; --boot-fg:#f4f1ea; --boot-accent:#f4f1ea; }
+  html, body { margin:0; height:100%; }
+  body { background:var(--boot-bg); color:var(--boot-fg);
+         font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+  #boot { position:fixed; inset:0; z-index:9999; background:var(--boot-bg);
+          display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+          transition:opacity .32s ease; }
+  #boot.is-done { opacity:0; pointer-events:none; }
+  .boot-pulse { display:flex; gap:8px; }
+  .boot-pulse span { width:9px; height:9px; border-radius:50%; background:var(--boot-accent);
+                     opacity:.22; animation:boot-bob 1.1s ease-in-out infinite; }
+  .boot-pulse span:nth-child(2) { animation-delay:.18s; }
+  .boot-pulse span:nth-child(3) { animation-delay:.36s; }
+  .boot-label { margin:0; font-size:13px; letter-spacing:.06em; text-transform:lowercase; opacity:.55; }
+  @keyframes boot-bob { 0%,80%,100% { opacity:.22; transform:translateY(0); }
+                        40% { opacity:.9; transform:translateY(-5px); } }
+  @media (prefers-reduced-motion:reduce) {
+    .boot-pulse span { animation:boot-fade 1.5s ease-in-out infinite; transform:none; }
+    @keyframes boot-fade { 0%,100% { opacity:.25; } 50% { opacity:.85; } }
+  }
+</style>
+</head>
+<body>
+  <!-- Agnostic boot overlay. Paints immediately; lab.js fades it out on the first
+       real render. The label is app-overridable (set #boot .boot-label text). -->
+  <div id="boot" role="status" aria-live="polite">
+    <div class="boot-pulse" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="boot-label">working…</p>
+  </div>
+
+  <!-- No top chrome: this is a devtools-style surface. Branding, session actions
+       (export/import/reset) and theme/roundness all live in the Settings panel,
+       which is substrate. The whole UI is the one composed `page` view. -->
+  <main id="app"></main>
+  <!-- data-cfasync="false" opts these out of Cloudflare Rocket Loader. Rocket
+       Loader re-injects classic scripts, which double-executes their top-level
+       `const`/`let` and throws "Identifier already declared". These are ordered,
+       interdependent kernel scripts — they must run once, in order, untouched. -->
+  <script data-cfasync="false" src="/awcore.js"></script>
+  <script data-cfasync="false" src="/widgets.js"></script>
+  <script data-cfasync="false" src="/host.js"></script>
+  <script data-cfasync="false" src="/engine.js"></script>
+  <script data-cfasync="false" src="/lab.js"></script>
+</body>
+</html>

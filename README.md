@@ -1,30 +1,136 @@
-# ui
+# aowlui
 
-Raw `.aowl` source repo for the `aoughwl/ui` pack.
+**The aoughwl lab UI, as nimony values.** The design tokens, the component
+stylesheet and the base layer of the original lab — ported out of 3055 lines of
+flat CSS into typed values, with a round-trip gate proving the port did not
+change the design.
 
-This repo publishes the UI package itself as the repo root.
+```nim
+import aowlui
 
-Main entry points:
+for c in labComponents():
+  echo c.name, "  (", c.family, ", ", c.rules.len, " rules)"
 
-- `ui.aowl`
-- `theme.aowl`
-- `variants.aowl`
-- `components/`
+echo render(labComponents()[0])     # back to exactly the CSS the lab shipped
+```
 
-Public surface:
+## Why this is not just a stylesheet in a string
 
-- `renderTheme()` for the token stylesheet
-- `renderStylesheet()` for the scoped component styles
-- `styleErrors()` for CSS validation feedback
-- `button()`, `iconButton()`, `textInput()`, `badge()`, `pill()`, `avatar()`,
-  `divider()`, `card()`, `surface()`, `stack()`, `cluster()`, `sidebar()`,
-  `toolbar()`, `menuItem()`, `sectionHeader()`, `formField()`, `stat()`,
-  `meter()`, `progressBar()`, `callout()`, `toast()`, `dialog()`,
-  `emptyState()`, `codeBlock()`, `tab()`, `tabs()`, and `breadcrumb()`
+The lab's `styles.css` was 3055 flat lines. Which rules belonged together, which
+were *states* of the same thing, and which were *parts* of it lived only in the
+ordering and in whoever last edited the file. Here a component is a value:
 
-Notes:
+```nim
+Component(name: "ghost-button", family: "controls", rules: @[
+  Rule(kind: stBase,  decls: "…"),
+  Rule(kind: stHover, decls: "…"),
+  Rule(kind: stFlag, flag: "active", decls: "…"),
+  Rule(part: " .icon", kind: stBase, decls: "…")])
+```
 
-- The public API stays plain-name, without the old `ui` prefix.
-- Theme tokens live in `theme.aowl`.
-- New components should reuse the existing `web:` DSL shape so styling and
-  pseudo-state handling stay consistent across the pack.
+which buys three things the stylesheet could not have:
+
+1. **States are declared, not spelled.** `.ghost-button:hover` and
+   `.ghost-button.active` were unrelated selectors five lines apart. Here they
+   are states *of the same component*, so "what are this thing's states" is a
+   query rather than a reading exercise.
+2. **Parts are owned.** `.owl-mark .owl-eye` belongs to the owl, so the owl moves
+   or is deleted as one piece.
+3. **It is content-addressed.** `digest` hashes a component's rules, so identical
+   components collapse to one identity regardless of what a human called them —
+   the seam where aowlui meets the aoughwl store.
+
+Tokens are values too: one `TokenDef` per token carrying both themes' readings,
+so the `:root` blocks are *emitted* rather than maintained in two places, and a
+component names a colour by an enum instead of by spelling `var(--name)`.
+
+## The port is proven, not asserted
+
+`tools/ingest` reads `reference/styles.css`, classifies all **429 selectors**, and
+generates `aowlui/lab/components.nim` — **195 components** plus **64 raw** rules
+(at-rules, `:root`, bare element selectors) carried verbatim.
+
+Nothing is dropped and nothing is guessed: a selector the component model does
+not explain becomes a `stRaw` rule rather than a plausible-looking invention, so
+the raw count is an honest measure of how much of the sheet the model actually
+explains.
+
+`tests/tround.nim` then renders the components back and compares against the
+original **declaration by declaration, in both directions**:
+
+```
+original declarations: 1739
+ported declarations:   1739
+missing:  0
+invented: 0
+ROUND-TRIP OK
+```
+
+The comparison is on the declaration multiset rather than on text, because the
+port deliberately regroups rules by component — byte equality would fail for a
+*faithful* port and prove nothing. What must hold is that every
+`(selector, property, value)` the lab shipped is still emitted, and that none
+were invented.
+
+This gate earns its keep. It caught the port silently turning every
+`.owner .part` descendant selector into a `.owner.part` compound one — the
+declaration counts matched exactly (1739 = 1739) while the design was broken,
+which is precisely the failure a count-based or eyeball check would have passed.
+
+## The component pack
+
+The pack proper — 27 components, all spelled with the `web:` DSL, public API
+without the old `ui` prefix:
+
+`button` `iconButton` `textInput` `badge` `pill` `avatar` `divider` `card`
+`surface` `stack` `cluster` `sidebar` `toolbar` `menuItem` `sectionHeader`
+`formField` `stat` `meter` `progressBar` `callout` `toast` `dialog`
+`emptyState` `codeBlock` `tab` `tabs` `breadcrumb`
+
+plus `renderTheme()` for the token stylesheet, `renderStylesheet()` for the
+scoped component styles, and `styleErrors()` for CSS validation feedback.
+
+New components should reuse the existing `web:` DSL shape so styling and
+pseudo-state handling stay consistent across the pack.
+
+## Layout
+
+| path | what |
+| --- | --- |
+| `ui.nim` | the component pack |
+| `theme.nim` | the pack's theme tokens |
+| `variants.nim` | variant/size vocabulary |
+| `components/` | the pack's components, by family |
+| `aowlui/tokens.nim` | the palette, per theme, as data |
+| `aowlui/base.nim` | the ground layer: box model, scrollbars, selection, page gradient |
+| `aowlui/component.nim` | what a component *is* — states, parts, digest, render |
+| `aowlui/lab/components.nim` | **generated** — the ported lab components |
+| `tools/ingest.nim` | the CSS → components ingester |
+| `reference/` | the original lab `styles.css` / `index.html` / `lab.js` |
+
+## Run the gates
+
+```sh
+./tests/run.sh        # regenerates from reference/, then proves the round-trip
+```
+
+## Status
+
+Done: tokens, base layer, the component model, and the full CSS port with its
+round-trip gate.
+
+Not done yet: the **markup** side. `reference/index.html` and `reference/lab.js`
+are in the repo but not yet expressed as `web` components, so aowlui currently
+describes how the lab *looks*, not how it is *assembled*. That is the next step,
+and it is what will make `aowlui` usable as a component library rather than as a
+typed stylesheet.
+
+## Built on
+
+- [`css`](https://github.com/aoughwl/css) — the CSS parser the ingester reads with.
+- [`web`](https://github.com/aoughwl/web) — the HTML+CSS DSL the markup port will target.
+
+## License
+
+MIT.
+>>>>>>> eabbf23 (aowlui: the lab UI as values, with the port proven)

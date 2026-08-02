@@ -114,16 +114,49 @@ pseudo-state handling stay consistent across the pack.
 ./tests/run.sh        # regenerates from reference/, then proves the round-trip
 ```
 
+## The page
+
+`aowlui/lab/shell.nim` is the port of `reference/index.html` — the boot overlay,
+the mount point, the head and the ordered kernel scripts, as `component`s:
+
+```nim
+import aowlui
+echo labPage()      # the whole lab page, byte-faithful to the original
+```
+
+Three details of the original are load-bearing and preserved exactly:
+
+- **The boot overlay is not decoration.** It paints on the first byte so a cold
+  load reads as "working" rather than a dead colour while the kernel parses. It
+  is `role="status" aria-live="polite"`, and the pulse is `aria-hidden` because
+  three bouncing dots are noise to announce.
+- **The boot CSS is the only CSS in the page**, inline and self-contained so it
+  cannot block on a request. It is carried verbatim rather than built from
+  `Style` values, because it is mostly `@keyframes` and `@media` — at-rules are
+  not declarations, and pretending otherwise would emit CSS that does not say
+  what the original said. `labPage()` passes `useStyles = false` for the same
+  reason: the real theme loads from the substrate, so shipping the generated
+  component stylesheet here would defeat that.
+- **`data-cfasync="false"` on every script.** Rocket Loader re-injects classic
+  scripts, double-executing their top-level `const`; these are ordered,
+  interdependent kernel scripts that must run once, in order.
+
+`tests/tshell.nim` gates it the same way the CSS is gated — not on bytes (the
+reference is hand-written, with comments and its own attribute order, so a
+faithful port would fail that and prove nothing) but on every element the
+reference's body declares, plus the kernel scripts **in the reference's own
+order**. The script list is read out of `reference/index.html` at test time
+rather than transcribed, so the gate cannot drift from what it checks.
+
 ## Status
 
-Done: tokens, base layer, the component model, and the full CSS port with its
-round-trip gate.
+Done: tokens, the base layer, the component model, the full CSS port with its
+round-trip gate, and the page markup with its own gate.
 
-Not done yet: the **markup** side. `reference/index.html` and `reference/lab.js`
-are in the repo but not yet expressed as `web` components, so aowlui currently
-describes how the lab *looks*, not how it is *assembled*. That is the next step,
-and it is what will make `aowlui` usable as a component library rather than as a
-typed stylesheet.
+Not ported: `reference/lab.js`. That file is bootstrap *behaviour* — SSE
+hydration, the keyed reconciler, widget/style bundle loading — not markup. It
+belongs on the JS backend with [`web-state`](https://github.com/aoughwl/web-state),
+whose reactive DOM binding now exists but is not yet wired to these components.
 
 ## Built on
 

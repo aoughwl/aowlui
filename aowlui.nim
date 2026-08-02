@@ -6,4 +6,5 @@ import aowlui/tokens
 import aowlui/base
 import aowlui/component
 import aowlui/lab/components
-export tokens, base, component, components
+import aowlui/lab/shell
+export tokens, base, component, components, shell

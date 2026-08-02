@@ -10,8 +10,8 @@
 ## The pack surface is plain exported procs authored with the `web:` DSL.
 ## The component syntax itself is demonstrated in `scripts/component.aowl`.
 
-import aoughwl/ui/theme
-import aoughwl/web
+import theme
+import web
 
 proc button*(label: string): HTMLNode =
   let frag = web:

@@ -6,7 +6,7 @@
 ## Styling is inline: `v(token)` tokens, and `[focus]:` / `[placeholder]:`
 ## bracketed pseudos.
 
-import aoughwl/web            # HTMLNode, webEl/webAttr/…, and the `web:` markup DSL
+import web            # HTMLNode, webEl/webAttr/…, and the `web:` markup DSL
 
 component textInput:
   input placeholder: string

@@ -1,6 +1,6 @@
 ## ui/components/panel — the Panel (DockPanel) style table (DATA) + builder proc.
 
-import aoughwl/ui/variants
+import variants
 
 register("Panel", ComponentStyles(
   base: spec(@[

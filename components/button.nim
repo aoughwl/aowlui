@@ -7,7 +7,7 @@
 ## and bracketed pseudo sub-blocks `[hover]:` / `[disabled]:` compile to
 ## `:hover` / `:disabled` rules on the one content-addressed class.
 
-import aoughwl/web            # HTMLNode, webEl/webAttr/…, and the `web:` markup DSL
+import web            # HTMLNode, webEl/webAttr/…, and the `web:` markup DSL
 
 component button:
   input label: string

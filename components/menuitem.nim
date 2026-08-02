@@ -1,6 +1,6 @@
 ## ui/components/menuitem — the MenuItem style table (DATA) + builder proc.
 
-import aoughwl/ui/variants
+import variants
 
 register("MenuItem", ComponentStyles(
   base: pseudo(

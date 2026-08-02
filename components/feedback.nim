@@ -1,6 +1,6 @@
 ## ui/components/feedback — reference sources for empty-state and alert-like UI.
 
-import aoughwl/web
+import web
 
 component toast:
   input title: string

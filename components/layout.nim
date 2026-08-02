@@ -3,7 +3,7 @@
 ## These files document the component shape we author against; the shipped
 ## implementation in `packs/aoughwl/ui.aowl` is the runtime surface.
 
-import aoughwl/web
+import web
 
 component stack:
   input children: HTML = @[]

@@ -11,8 +11,8 @@
 ##   Adding a component = register a spec table + write a thin proc.
 ## The engine, merge, encoder and token layer never change.
 
-import aoughwl/web            # webClass, renderStylesheet, styleErrors
-import aoughwl/ui/theme       # ensures the tokens exist
+import web            # webClass, renderStylesheet, styleErrors
+import theme       # ensures the tokens exist
 export web
 export theme
 

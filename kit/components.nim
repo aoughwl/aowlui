@@ -220,6 +220,36 @@ proc code*(source: string; extra = ""): HTMLNode =
   result = node("pre", cx("code", extra))
   result.add text(source)
 
+# ── log view ────────────────────────────────────────────────────────────────
+#
+# Every technical surface grows an output pane, and every one of them ends up
+# re-inventing the same three parts: a scrolling region, a dim timestamp
+# gutter, and a tone per line. Absent from the kit, that gets hand-rolled at
+# each call site with its own colours, which is exactly the drift the kit
+# exists to prevent -- so it belongs here.
+
+proc logView*(children: HTML = @[]; extra = ""): HTMLNode =
+  ## A scrolling output region. `aria-live` is polite rather than assertive:
+  ## build output should reach a screen reader without interrupting them.
+  result = node("div", cx("logview", extra))
+  result.setAttr("role", "log")
+  result.setAttr("aria-live", "polite")
+  var i = 0
+  while i < children.len:
+    result.add children[i]
+    inc i
+
+proc logLine*(message: string; time = ""; tone = ""; extra = ""): HTMLNode =
+  ## One line. `tone` is "ok" / "warn" / "err" / "" and maps to the same ramp
+  ## the rest of the kit uses, so an error here is the same red as an error
+  ## anywhere else.
+  var c = "log-line"
+  if tone.len > 0: c.add " is-" & tone
+  result = node("div", cx(c, extra))
+  if time.len > 0:
+    result.add textNode("span", "log-time", time)
+  result.add textNode("span", "log-msg", message)
+
 # ── controls ────────────────────────────────────────────────────────────────
 
 proc button*(label: string; primary = false; danger = false; ghost = false;

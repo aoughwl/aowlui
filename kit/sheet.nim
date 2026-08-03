@@ -217,6 +217,20 @@ proc kitSheet*(): Stylesheet =
     "font-family:var(--font-mono);font-size:var(--fs-sm);line-height:1.55;" &
     "overflow:auto;user-select:text")
 
+  # ── log view ─────────────────────────────────────────────────────────────
+  result.rule ".logview", styleOf(
+    "display:flex;flex-direction:column;min-height:0;overflow:auto;" &
+    "padding:var(--s2) var(--s3);background:var(--bg-3);" &
+    "font-family:var(--font-mono);font-size:var(--fs-sm);line-height:1.7")
+  result.rule ".log-line", styleOf(
+    "display:flex;gap:var(--s3);align-items:baseline;color:var(--ink-2)")
+  result.rule ".log-time", styleOf(
+    "flex:none;color:var(--ink-3);font-variant-numeric:tabular-nums")
+  result.rule ".log-msg", styleOf("white-space:pre-wrap;word-break:break-word")
+  result.rule ".log-line.is-ok .log-msg", styleOf("color:var(--ok)")
+  result.rule ".log-line.is-warn .log-msg", styleOf("color:var(--warn)")
+  result.rule ".log-line.is-err .log-msg", styleOf("color:var(--danger)")
+
   # ── controls ─────────────────────────────────────────────────────────────
   # The base button is the secondary style: the common case should not need a
   # modifier, and a page of primary buttons has no primary action.

@@ -78,6 +78,14 @@ proc kitSheet*(): Stylesheet =
     "color:var(--secondary);font-size:var(--fs-sm);font-weight:500;" &
     "text-transform:uppercase;letter-spacing:.08em;user-select:none")
   result.rule ".pane-body", styleOf("flex:1 1 auto;min-height:0;overflow:auto")
+  # A pane whose body must LAY OUT its children rather than scroll them: an
+  # editor, a canvas, anything that fills. Without this a mounted component has
+  # no height to stretch against and collapses to zero -- which looks like the
+  # component failing to load rather than the container failing to size it.
+  result.rule ".pane.is-column > .pane-body", styleOf(
+    "display:flex;flex-direction:column;overflow:hidden")
+  # the child that takes the remaining space in such a body
+  result.rule ".fill", styleOf("flex:1 1 auto;min-height:0;min-width:0")
   # A splitter is a hairline with a generous invisible grab area — the target is
   # bigger than the thing you see, which is what makes dragging feel accurate.
   result.rule ".splitter", styleOf(

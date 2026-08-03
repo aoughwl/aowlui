@@ -382,6 +382,12 @@ proc kitSheet*(): Stylesheet =
   result.rule ".sx-str", styleOf("color:var(--ok)")
   # An atom something ELSE also contains. Sharing is the store's central claim
   # and it was invisible; this is what makes it visible.
+  # The same region, INSIDE an editor. Monaco owns the text, so a decoration
+  # can only tint a range -- which is enough: the hover tooltip and the click
+  # carry the rest, and a heavier treatment would fight the syntax colours.
+  result.rule ".sx-region", styleOf(
+    "background:color-mix(in srgb, var(--accent) 8%, transparent);" &
+    "border-radius:var(--r1)")
   result.rule ".sx-shared", styleOf(
     "border-bottom:var(--hair) dashed var(--accent)")
   result.rule ".sr-only", styleOf(

@@ -413,9 +413,16 @@ proc kitSheet*(): Stylesheet =
   # but an OUTLINE is an edge rather than a tint, and a momentary reveal is
   # exactly the moment you need it: while ctrl is down you are about to click
   # one, and this is what says which runs of text are things you can open.
+  #
+  # It has to be LOUD. The first attempt was a 1px inset shadow at 45% alpha,
+  # which is invisible against text — a reveal nobody can see is the same as no
+  # reveal. This is a full-strength edge over a wash, which is what every
+  # editor's ctrl-hover link treatment looks like, and it is only on screen
+  # while the key is down.
   result.rule ".sx-region", styleOf(
-    "border-radius:var(--r1);box-shadow:inset 0 0 0 var(--hair) " &
-    "color-mix(in srgb, var(--accent) 45%, transparent);cursor:pointer")
+    "border-radius:var(--r1);cursor:pointer;" &
+    "background:color-mix(in srgb, var(--accent) 12%, transparent);" &
+    "box-shadow:inset 0 0 0 var(--hair) var(--accent)")
   # A tab holding a PREVIEW: opened with one click, replaced by the next one,
   # made permanent by a double click. Italic is the convention and it is worth
   # keeping -- it is the only cue that the tab is about to be reused.

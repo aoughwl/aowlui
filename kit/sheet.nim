@@ -358,7 +358,17 @@ proc kitSheet*(): Stylesheet =
     "display:flex;align-items:center;gap:var(--s2);min-width:0")
   result.rule ".col", styleOf(
     "display:flex;flex-direction:column;gap:var(--s2);min-width:0")
-  result.rule ".grow", styleOf("flex:1 1 auto;min-width:0")
+  # `flex-basis:0`, NOT `auto`. With `auto` a flex child's share starts from its
+  # CONTENT, so a pane holding a lot of text took the room and a pane holding an
+  # editor — which reports almost no intrinsic width — got squeezed to nothing.
+  # The symptom is an editor with no width beside an oversized neighbour, and
+  # nothing in either pane's own CSS is wrong. `grow` should mean "share the
+  # SPACE", which is what basis 0 says.
+  result.rule ".grow", styleOf("flex:1 1 0;min-width:0")
+  # Twice the share of its siblings. The editor is the subject of this window,
+  # not a peer of the panes beside it, and saying so needs a token rather than a
+  # width — a width would stop being right at the next viewport.
+  result.rule ".is-wide", styleOf("flex:2 1 0")
   result.rule ".pad", styleOf("padding:var(--s3)")
   # A row that WRAPS rather than overflowing. Same story as `.console`: call
   # sites were already writing `wrap`, and it matched nothing.
@@ -398,6 +408,14 @@ proc kitSheet*(): Stylesheet =
   result.rule ".sx-parent", styleOf(
     "background:color-mix(in srgb, var(--accent) 9%, transparent);" &
     "border-radius:var(--r1)")
+  # EVERY region at once, shown only while a modifier is held. Painting them all
+  # permanently cannot work — they nest, so the fills stack into one flat wash —
+  # but an OUTLINE is an edge rather than a tint, and a momentary reveal is
+  # exactly the moment you need it: while ctrl is down you are about to click
+  # one, and this is what says which runs of text are things you can open.
+  result.rule ".sx-region", styleOf(
+    "border-radius:var(--r1);box-shadow:inset 0 0 0 var(--hair) " &
+    "color-mix(in srgb, var(--accent) 45%, transparent);cursor:pointer")
   # A tab holding a PREVIEW: opened with one click, replaced by the next one,
   # made permanent by a double click. Italic is the convention and it is worth
   # keeping -- it is the only cue that the tab is about to be reused.

@@ -270,3 +270,29 @@ proc renderReset*(): string =
              "background:var(--bg);color:var(--primary)}\n"
   result.add "@media (prefers-reduced-motion:reduce){*{animation-duration:1ms!important;" &
              "transition-duration:1ms!important}}\n"
+  # ── SCROLLBARS, everywhere, from the tokens ─────────────────────────────────
+  #
+  # In the RESET rather than as a component, because a scrollbar is not
+  # something you place — it appears on whatever overflows, and a kit that
+  # themes its panels and leaves the browser's default bars on top of them is a
+  # kit that stops looking themed the moment anything is longer than its box.
+  # Nothing has to opt in and nothing can forget to.
+  #
+  # Both standards, deliberately. `scrollbar-color` is the interoperable one and
+  # Firefox supports only it; the `::-webkit-` pseudo-elements are what Chrome
+  # and Safari honour, and they allow the rounded, inset look. A browser applies
+  # whichever it understands and ignores the other.
+  result.add "*{scrollbar-color:var(--border) transparent;scrollbar-width:thin}\n"
+  result.add "::-webkit-scrollbar{width:var(--s3);height:var(--s3)}\n"
+  result.add "::-webkit-scrollbar-track{background:transparent}\n"
+  # A thumb built from `--border` follows every theme without naming a colour,
+  # and the transparent border plus background-clip is what insets it from the
+  # track so it reads as a slim bar rather than filling the gutter.
+  result.add "::-webkit-scrollbar-thumb{background:var(--border);" &
+             "border-radius:var(--r-pill);border:var(--s1) solid transparent;" &
+             "background-clip:padding-box}\n"
+  result.add "::-webkit-scrollbar-thumb:hover{background:var(--secondary);" &
+             "border:var(--s1) solid transparent;background-clip:padding-box}\n"
+  # Where two scrollbars meet, the browser fills a small square with its own
+  # default grey; it is the one part that stays visibly un-themed otherwise.
+  result.add "::-webkit-scrollbar-corner{background:transparent}\n"

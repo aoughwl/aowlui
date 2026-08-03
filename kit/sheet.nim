@@ -96,17 +96,25 @@ proc kitSheet*(): Stylesheet =
     "display:flex;flex-direction:column;overflow:hidden")
   # the child that takes the remaining space in such a body
   result.rule ".fill", styleOf("flex:1 1 auto;min-height:0;min-width:0")
-  # A splitter is a hairline with a generous invisible grab area — the target is
-  # bigger than the thing you see, which is what makes dragging feel accurate.
+  # A splitter is a hairline with a generous grab area, and the grab area must
+  # not COST anything.
+  #
+  # It used to get its target size from transparent left/right borders, which
+  # are real box width: the divider occupied nine pixels of layout to show one,
+  # and between two panes that reads as a gap rather than as a seam. The grab
+  # area is an absolutely-positioned overlay now, so it is just as easy to hit
+  # and takes no space at all.
   result.rule ".splitter", styleOf(
-    "flex:0 0 auto;width:var(--hair);background:var(--border);cursor:col-resize;" &
-    "border-left:var(--s1) solid transparent;" &
-    "border-right:var(--s1) solid transparent;background-clip:padding-box")
+    "flex:0 0 auto;position:relative;width:var(--hair);" &
+    "background:var(--border);cursor:col-resize")
+  result.rule ".splitter::before", styleOf(
+    "content:'';position:absolute;top:0;bottom:0;" &
+    "left:calc(-1 * var(--s2));right:calc(-1 * var(--s2))")
   result.rule ".splitter:hover", styleOf("background:var(--accent)")
   result.rule ".splitter.is-row", styleOf(
-    "width:auto;height:var(--hair);cursor:row-resize;border-left:0;border-right:0;" &
-    "border-top:var(--s1) solid transparent;" &
-    "border-bottom:var(--s1) solid transparent")
+    "width:auto;height:var(--hair);cursor:row-resize")
+  result.rule ".splitter.is-row::before", styleOf(
+    "left:0;right:0;top:calc(-1 * var(--s2));bottom:calc(-1 * var(--s2))")
 
   # ── chrome: toolbar, status bar ──────────────────────────────────────────
   result.rule ".toolbar", styleOf(
@@ -426,6 +434,14 @@ proc kitSheet*(): Stylesheet =
     "cursor:pointer;text-decoration:underline;" &
     "text-decoration-color:var(--accent);text-decoration-thickness:var(--hair);" &
     "text-underline-offset:calc(var(--u) * 0.75)")
+  # A token that HAS A DEFINITION somewhere else -- a kind whose meaning is a
+  # rule in a catalog. Dotted rather than solid, because it leads out of this
+  # document rather than to another part of it, which is the same distinction
+  # every editor draws between a reference and a definition.
+  result.rule ".sx-def", styleOf(
+    "cursor:pointer;text-decoration:underline dotted;" &
+    "text-decoration-color:var(--secondary);" &
+    "text-underline-offset:calc(var(--u) * 0.75)")
   # A tab holding a PREVIEW: opened with one click, replaced by the next one,
   # made permanent by a double click. Italic is the convention and it is worth
   # keeping -- it is the only cue that the tab is about to be reused.
@@ -584,6 +600,42 @@ proc kitSheet*(): Stylesheet =
     "display:block;cursor:col-resize")
   result.rule "body.is-resizing-y .drag-shield", styleOf(
     "display:block;cursor:row-resize")
+  # ── an overlay tool cluster ─────────────────────────────────────────────────
+  #
+  # Controls that belong to what you are LOOKING at rather than to the app:
+  # filters over a reading, a zoom level, a view mode. They sit over the content
+  # in a corner, the way an editor's find widget or a map's zoom control does,
+  # because a permanent strip for them costs a row of height on every document
+  # whether or not anyone is filtering.
+  #
+  # The host positions the anchor; this only says what the cluster looks like.
+  result.rule ".tools", styleOf(
+    "position:absolute;top:var(--s2);right:var(--s3);z-index:var(--z-float);" &
+    "display:flex;align-items:center;gap:var(--s1);" &
+    "padding:var(--s1);border-radius:var(--r2);" &
+    "background:var(--bg-2);border:var(--hair) solid var(--border);" &
+    "box-shadow:var(--shadow)")
+  # Collapsed: only the handle shows, and it fades until pointed at, so a long
+  # document is not read past a permanent control.
+  result.rule ".tools.is-collapsed", styleOf(
+    "background:transparent;border-color:transparent;box-shadow:none;" &
+    "opacity:.45")
+  result.rule ".tools.is-collapsed:hover", styleOf("opacity:1")
+  result.rule ".tools-body", styleOf(
+    "display:flex;align-items:center;gap:var(--s2)")
+  result.rule ".tools.is-collapsed .tools-body", styleOf("display:none")
+  # An element that must sit under an overlay cluster: `position:relative` is
+  # the anchor, and a pane body that scrolls would otherwise scroll the tools
+  # away with the content.
+  #
+  # It is also a FLEX COLUMN, and that is not decoration. An anchor wraps the
+  # content it floats over, so whatever is inside it was already sized with
+  # `.fill` — `flex:1 1 auto`, which does nothing at all in a plain block. The
+  # symptom is a mounted editor exactly 0px tall inside a container that looks
+  # correct in every other respect.
+  result.rule ".anchored", styleOf(
+    "position:relative;display:flex;flex-direction:column;" &
+    "min-height:0;min-width:0")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

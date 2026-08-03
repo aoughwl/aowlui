@@ -78,6 +78,16 @@ proc kitSheet*(): Stylesheet =
     "color:var(--secondary);font-size:var(--fs-sm);font-weight:500;" &
     "text-transform:uppercase;letter-spacing:.08em;user-select:none")
   result.rule ".pane-body", styleOf("flex:1 1 auto;min-height:0;overflow:auto")
+  # A CONSOLE: the pane docked along the bottom edge, holding output. It needs a
+  # height of its own because its row in the shell grid is `auto`, so without
+  # one it collapses to its head and the output is invisible.
+  #
+  # This exists because two call sites were already writing `console` as an
+  # extra class the kit had never heard of, and it therefore matched nothing.
+  # A class invented at a call site does not fail -- it silently does nothing,
+  # which is why the rule is that the kit owns every name.
+  result.rule ".console", styleOf(
+    "flex:0 0 auto;height:calc(var(--u) * 40);min-height:calc(var(--u) * 16)")
   # A pane whose body must LAY OUT its children rather than scroll them: an
   # editor, a canvas, anything that fills. Without this a mounted component has
   # no height to stretch against and collapses to zero -- which looks like the
@@ -350,6 +360,9 @@ proc kitSheet*(): Stylesheet =
     "display:flex;flex-direction:column;gap:var(--s2);min-width:0")
   result.rule ".grow", styleOf("flex:1 1 auto;min-width:0")
   result.rule ".pad", styleOf("padding:var(--s3)")
+  # A row that WRAPS rather than overflowing. Same story as `.console`: call
+  # sites were already writing `wrap`, and it matched nothing.
+  result.rule ".wrap", styleOf("flex-wrap:wrap")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

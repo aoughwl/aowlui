@@ -385,11 +385,18 @@ proc kitSheet*(): Stylesheet =
   # The same region, INSIDE an editor. Monaco owns the text, so a decoration
   # can only tint a range -- which is enough: the hover tooltip and the click
   # carry the rest, and a heavier treatment would fight the syntax colours.
-  result.rule ".sx-region", styleOf(
-    "background:color-mix(in srgb, var(--accent) 8%, transparent);" &
+  # Alternating by DEPTH, because every atom nests inside its parent: one tint
+  # for all of them stacks into a flat wash and shows nothing. Odd levels are
+  # tinted and even levels are not, so a child reads as sitting inside its
+  # parent. The strength is deliberately near the floor -- this sits under
+  # syntax colouring and must not compete with it.
+  result.rule ".sx-odd", styleOf(
+    "background:color-mix(in srgb, var(--accent) 16%, transparent);" &
     "border-radius:var(--r1)")
+  result.rule ".sx-even", styleOf("background:transparent")
+  # An atom something ELSE also contains, marked inside the editor.
   result.rule ".sx-shared", styleOf(
-    "border-bottom:var(--hair) dashed var(--accent)")
+    "box-shadow:inset 0 -2px 0 -1px var(--accent)")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

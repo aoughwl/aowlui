@@ -392,37 +392,40 @@ proc kitSheet*(): Stylesheet =
   result.rule ".sx-str", styleOf("color:var(--ok)")
   # An atom something ELSE also contains. Sharing is the store's central claim
   # and it was invisible; this is what makes it visible.
-  # The same region, INSIDE an editor. Monaco owns the text, so a decoration
-  # can only tint a range -- which is enough: the hover tooltip and the click
-  # carry the rest, and a heavier treatment would fight the syntax colours.
-  # ONE region at a time, and its parent.
+  # ── inside the editor: mark TOKENS, never areas ─────────────────────────────
   #
-  # Painting every atom cannot work: atoms nest, so the decorations overlap and
-  # any scheme -- one tint, alternating tints -- stacks on the innermost
-  # characters into a flat wash. Editors solved this long ago for bracket
-  # matching: highlight what the cursor is IN. `.sx-here` is that atom and
-  # `.sx-parent` is what contains it, so the pair reads as "this, inside that".
+  # Three attempts got this wrong the same way, so the rule is worth stating.
+  # An atom's region runs from its first character to its last, which for a
+  # nested term crosses line ends and indentation. Every treatment applied to
+  # that region -- one tint, alternating tints, an outline -- draws over
+  # whitespace, and because atoms nest it draws over the same whitespace many
+  # times. The result reads as a smear whatever colour it is.
+  #
+  # So nothing here styles a region. Each rule styles the atom's HEAD: the one
+  # token that names it, always on a single line, never blank.
+  #
+  # `.sx-here` is the atom the caret is in. There is no `.sx-parent` any more --
+  # indentation guides already draw containment continuously, for every level at
+  # once, without covering anything, so a second weaker answer to the same
+  # question was competing with a better one.
   result.rule ".sx-here", styleOf(
-    "background:color-mix(in srgb, var(--accent) 26%, transparent);" &
-    "border-radius:var(--r1)")
-  result.rule ".sx-parent", styleOf(
-    "background:color-mix(in srgb, var(--accent) 9%, transparent);" &
-    "border-radius:var(--r1)")
+    "background:color-mix(in srgb, var(--accent) 22%, transparent);" &
+    "border-radius:var(--r1);font-weight:600")
   # EVERY region at once, shown only while a modifier is held. Painting them all
   # permanently cannot work — they nest, so the fills stack into one flat wash —
   # but an OUTLINE is an edge rather than a tint, and a momentary reveal is
   # exactly the moment you need it: while ctrl is down you are about to click
   # one, and this is what says which runs of text are things you can open.
   #
-  # It has to be LOUD. The first attempt was a 1px inset shadow at 45% alpha,
-  # which is invisible against text — a reveal nobody can see is the same as no
-  # reveal. This is a full-strength edge over a wash, which is what every
-  # editor's ctrl-hover link treatment looks like, and it is only on screen
-  # while the key is down.
+  # An UNDERLINE, on the head token, which is what a ctrl-hover link is
+  # everywhere else — and it is the only treatment that cannot smear, because a
+  # rule under one word has nowhere to spread. An outline was tried and boxed
+  # the indentation; a background was tried and stacked into a wash. Both were
+  # drawing an area when the thing being marked is a word.
   result.rule ".sx-region", styleOf(
-    "border-radius:var(--r1);cursor:pointer;" &
-    "background:color-mix(in srgb, var(--accent) 12%, transparent);" &
-    "box-shadow:inset 0 0 0 var(--hair) var(--accent)")
+    "cursor:pointer;text-decoration:underline;" &
+    "text-decoration-color:var(--accent);text-decoration-thickness:var(--hair);" &
+    "text-underline-offset:calc(var(--u) * 0.75)")
   # A tab holding a PREVIEW: opened with one click, replaced by the next one,
   # made permanent by a double click. Italic is the convention and it is worth
   # keeping -- it is the only cue that the tab is about to be reused.
@@ -563,10 +566,24 @@ proc kitSheet*(): Stylesheet =
   result.rule ".dock-edge.is-on", styleOf("opacity:1")
   # While a drag or a resize is live the cursor must not change under the
   # pointer as it crosses other elements, or the gesture reads as having ended.
+  # A drag sets one of these on <body>. The cursor also has to stop changing as
+  # the pointer crosses other elements mid-gesture, and the usual way to do that
+  # is `* { cursor: X !important }` -- which this kit's own CSS validator
+  # rejects, because it does not parse `!important`. Filed rather than worked
+  # around with a hand-written stylesheet: a kit whose validator cannot express
+  # a declaration the kit needs is a gap in the validator.
+  #
+  # Until then the overlay below does the job without `!important`: an element
+  # covering the viewport during a drag owns the cursor for the whole gesture,
+  # and it has to exist anyway to catch pointer events over iframes.
   result.rule "body.is-dragging", styleOf("cursor:grabbing")
-  result.rule "body.is-dragging *", styleOf("cursor:grabbing!important")
-  result.rule "body.is-resizing-x *", styleOf("cursor:col-resize!important")
-  result.rule "body.is-resizing-y *", styleOf("cursor:row-resize!important")
+  result.rule ".drag-shield", styleOf(
+    "position:fixed;inset:0;z-index:var(--z-drag);display:none")
+  result.rule "body.is-dragging .drag-shield", styleOf("display:block")
+  result.rule "body.is-resizing-x .drag-shield", styleOf(
+    "display:block;cursor:col-resize")
+  result.rule "body.is-resizing-y .drag-shield", styleOf(
+    "display:block;cursor:row-resize")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

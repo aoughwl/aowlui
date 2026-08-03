@@ -76,6 +76,103 @@ proc lightTheme*(): Theme =
     fontUi: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
     fontMono: "'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace")
 
+## ── MORE THAN TWO ─────────────────────────────────────────────────────────────
+##
+## `dark` and `light` were the whole set, and "toggle the theme" was a boolean.
+## Nothing in the system required that: a theme is fifteen strings, the sheet
+## reads them through `var()`, and `data-theme` is already an arbitrary name.
+## The base theme is emitted as `:root`; every other one is emitted as
+## `:root[data-theme="NAME"]` and overrides only the COLOUR ramp, because the
+## metrics are structure and a theme switch that resized the UI would be a bug.
+##
+## A theme adds a row here and appears in every picker that reads `themeNames()`.
+## No component changes, and nothing recompiles on the browser's side.
+
+const
+  Mono* = "'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace"
+  Ui* = "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
+
+type
+  NamedTheme* = object
+    name*: string        ## the `data-theme` value; "" for the base
+    label*: string       ## what a picker shows
+    theme*: Theme
+
+proc geom(t: var Theme) =
+  t.scale = "1"; t.roundness = "1"; t.unit = "4px"; t.fontSize = "13px"
+  t.fontUi = Ui; t.fontMono = Mono
+
+proc nordTheme*(): Theme =
+  result = Theme(
+    primary: "#eceff4", secondary: "#a9b3c2", tertiary: "#7f8b9c",
+    accent: "#88c0d0", danger: "#bf616a",
+    background: "#2e3440", backgroundSecondary: "#3b4252",
+    backgroundTertiary: "#272c36",
+    border: "rgba(236,239,244,.13)",
+    shadow: "0 22px 70px rgba(0,0,0,.40)")
+  geom result
+
+proc gruvboxTheme*(): Theme =
+  result = Theme(
+    primary: "#ebdbb2", secondary: "#bdae93", tertiary: "#928374",
+    accent: "#b8bb26", danger: "#fb4934",
+    background: "#1d2021", backgroundSecondary: "#282828",
+    backgroundTertiary: "#16181a",
+    border: "rgba(235,219,178,.14)",
+    shadow: "0 22px 70px rgba(0,0,0,.45)")
+  geom result
+
+proc solarizedTheme*(): Theme =
+  result = Theme(
+    primary: "#073642", secondary: "#586e75", tertiary: "#93a1a1",
+    accent: "#268bd2", danger: "#dc322f",
+    background: "#fdf6e3", backgroundSecondary: "#ffffff",
+    backgroundTertiary: "#eee8d5",
+    border: "rgba(7,54,66,.14)",
+    shadow: "0 18px 60px rgba(101,123,131,.18)")
+  geom result
+
+proc contrastTheme*(): Theme =
+  ## Not a taste. Pure black on pure white with a full-strength accent and a
+  ## border that is actually visible — for anyone the low-contrast palettes lock
+  ## out. A kit with a themable border colour gets this nearly for free, and a
+  ## kit without one cannot have it at all.
+  result = Theme(
+    primary: "#ffffff", secondary: "#e0e0e0", tertiary: "#bdbdbd",
+    accent: "#ffd400", danger: "#ff5252",
+    background: "#000000", backgroundSecondary: "#0d0d0d",
+    backgroundTertiary: "#000000",
+    border: "rgba(255,255,255,.55)",
+    shadow: "0 0 0 1px rgba(255,255,255,.5)")
+  geom result
+
+proc themes*(): seq[NamedTheme] =
+  ## The base FIRST. Order is the order a picker shows them in.
+  @[NamedTheme(name: "", label: "dark", theme: darkTheme()),
+    NamedTheme(name: "light", label: "light", theme: lightTheme()),
+    NamedTheme(name: "nord", label: "nord", theme: nordTheme()),
+    NamedTheme(name: "gruvbox", label: "gruvbox", theme: gruvboxTheme()),
+    NamedTheme(name: "solarized", label: "solarized", theme: solarizedTheme()),
+    NamedTheme(name: "contrast", label: "high contrast",
+               theme: contrastTheme())]
+
+proc themeNames*(): seq[string] =
+  ## What a picker cycles through. The base is spelled `dark` here even though
+  ## it is emitted as bare `:root`, because a picker needs a name for it.
+  result = @[]
+  let ts = themes()
+  var i = 0
+  while i < ts.len:
+    if ts[i].name.len == 0: result.add ts[i].label
+    else: result.add ts[i].name
+    inc i
+
+proc isDarkTheme*(name: string): bool =
+  ## Whether a theme's page surface is dark, so anything that has to pick a
+  ## light/dark VARIANT of something it does not own -- an embedded editor, a
+  ## syntax theme -- can ask rather than assume there are only two answers.
+  name != "light" and name != "solarized"
+
 proc orElse(a, b: string): string =
   ## An optional token falls back rather than vanishing, so a component that
   ## references the third level still renders when a theme only defines two.
@@ -130,17 +227,32 @@ proc metricVars(t: Theme): string =
   result.add "--font-ui:" & t.fontUi & ";"
   result.add "--font-mono:" & t.fontMono & ";"
 
-proc renderTheme*(dark = darkTheme(); light = lightTheme()): string =
-  ## `:root` plus the light override. Metrics are emitted once, in `:root` only —
-  ## they are theme-independent, and repeating them in the light block would
-  ## invite the two drifting apart.
-  result = ":root{color-scheme:dark;"
-  result.add colorVars(dark)
-  result.add metricVars(dark)
-  result.add "}\n"
-  result.add ":root[data-theme=\"light\"]{color-scheme:light;"
-  result.add colorVars(light)
-  result.add "}\n"
+proc renderThemeBase*(base: Theme): string =
+  ## `:root` (the base) plus one override block per named theme. Metrics are
+  ## emitted once, in `:root` only — they are theme-independent, and repeating
+  ## them per theme would invite the copies drifting apart. `base` is separate
+  ## from `themes()[0]` so the metric knobs (`scale`, `roundness`) can be driven
+  ## without touching the palette table.
+  let ts = themes()
+  result = ""
+  var i = 0
+  while i < ts.len:
+    let t = ts[i]
+    if t.name.len == 0:
+      result.add ":root{color-scheme:dark;"
+      result.add colorVars(base)
+      result.add metricVars(base)
+      result.add "}\n"
+    else:
+      var scheme = "dark"
+      if not isDarkTheme(t.name): scheme = "light"
+      result.add ":root[data-theme=\"" & t.name & "\"]{color-scheme:" &
+                 scheme & ";"
+      result.add colorVars(t.theme)
+      result.add "}\n"
+    inc i
+
+proc renderTheme*(): string = renderThemeBase(darkTheme())
 
 proc renderReset*(): string =
   ## The ground layer. Everything here is a consequence of the token system:

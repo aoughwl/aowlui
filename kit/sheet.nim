@@ -405,6 +405,28 @@ proc kitSheet*(): Stylesheet =
   result.rule ".crumb.is-current", styleOf(
     "color:var(--primary);font-weight:600")
   result.rule ".crumb", styleOf("cursor:pointer")
+  # ── settings controls ───────────────────────────────────────────────────────
+  # A checkbox that is a BUTTON. The real `<input type=checkbox>` carries state
+  # the DOM owns, and this kit's state lives in the view -- so a control whose
+  # checkedness the reconciler cannot patch would drift from the view that
+  # derived it. The box is drawn, the class says whether it is on.
+  result.rule ".check", styleOf(
+    "display:inline-flex;align-items:center;gap:var(--s2);" &
+    "background:none;border:0;color:var(--secondary);cursor:pointer;" &
+    "font:inherit;padding:var(--s1) var(--s2);border-radius:var(--r1);" &
+    motion)
+  result.rule ".check:hover", styleOf(
+    "color:var(--primary);background:var(--bg-3)")
+  result.rule ".check-box", styleOf(
+    "width:var(--s3);height:var(--s3);border-radius:var(--r1);flex:0 0 auto;" &
+    "border:var(--hair) solid var(--border);background:var(--bg-3)")
+  result.rule ".check-label", styleOf("white-space:nowrap")
+  result.rule ".check.is-on", styleOf("color:var(--primary)")
+  result.rule ".check.is-on .check-box", styleOf(
+    "background:var(--accent);border-color:var(--accent)")
+  result.rule ".range", styleOf(
+    "flex:0 0 auto;width:calc(var(--u) * 30);accent-color:var(--accent);" &
+    "cursor:pointer")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

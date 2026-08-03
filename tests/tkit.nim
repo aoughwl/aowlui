@@ -109,7 +109,7 @@ proc main =
   var big = darkTheme()
   big.scale = "1.5"
   big.roundness = "0"
-  let scaled = renderTheme(big, lightTheme())
+  let scaled = renderThemeBase(big)
   if not contains(scaled, "--scale:1.5"):
     echo "  MISSING: scale did not reach :root"
     inc bad

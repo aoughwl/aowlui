@@ -385,18 +385,26 @@ proc kitSheet*(): Stylesheet =
   # The same region, INSIDE an editor. Monaco owns the text, so a decoration
   # can only tint a range -- which is enough: the hover tooltip and the click
   # carry the rest, and a heavier treatment would fight the syntax colours.
-  # Alternating by DEPTH, because every atom nests inside its parent: one tint
-  # for all of them stacks into a flat wash and shows nothing. Odd levels are
-  # tinted and even levels are not, so a child reads as sitting inside its
-  # parent. The strength is deliberately near the floor -- this sits under
-  # syntax colouring and must not compete with it.
-  result.rule ".sx-odd", styleOf(
-    "background:color-mix(in srgb, var(--accent) 16%, transparent);" &
+  # ONE region at a time, and its parent.
+  #
+  # Painting every atom cannot work: atoms nest, so the decorations overlap and
+  # any scheme -- one tint, alternating tints -- stacks on the innermost
+  # characters into a flat wash. Editors solved this long ago for bracket
+  # matching: highlight what the cursor is IN. `.sx-here` is that atom and
+  # `.sx-parent` is what contains it, so the pair reads as "this, inside that".
+  result.rule ".sx-here", styleOf(
+    "background:color-mix(in srgb, var(--accent) 26%, transparent);" &
     "border-radius:var(--r1)")
-  result.rule ".sx-even", styleOf("background:transparent")
-  # An atom something ELSE also contains, marked inside the editor.
-  result.rule ".sx-shared", styleOf(
-    "box-shadow:inset 0 -2px 0 -1px var(--accent)")
+  result.rule ".sx-parent", styleOf(
+    "background:color-mix(in srgb, var(--accent) 9%, transparent);" &
+    "border-radius:var(--r1)")
+  # A tab holding a PREVIEW: opened with one click, replaced by the next one,
+  # made permanent by a double click. Italic is the convention and it is worth
+  # keeping -- it is the only cue that the tab is about to be reused.
+  result.rule ".tab.is-preview", styleOf("font-style:italic")
+  result.rule ".crumb.is-current", styleOf(
+    "color:var(--primary);font-weight:600")
+  result.rule ".crumb", styleOf("cursor:pointer")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

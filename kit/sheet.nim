@@ -363,6 +363,27 @@ proc kitSheet*(): Stylesheet =
   # A row that WRAPS rather than overflowing. Same story as `.console`: call
   # sites were already writing `wrap`, and it matched nothing.
   result.rule ".wrap", styleOf("flex-wrap:wrap")
+
+  # ── s-expression structure ────────────────────────────────────────────────
+  # A rendered ATOM: nested regions, each an atom in its own right. The hover
+  # highlight is not decoration -- it is how you see where one atom ends and its
+  # parent begins, which is the whole content of "an atom is composed of atoms".
+  result.rule ".sx", styleOf(
+    "font-family:var(--font-mono);font-size:var(--fs-sm);line-height:1.5;" &
+    "white-space:pre;overflow:auto;padding:var(--s2) var(--s3);" &
+    "min-height:0;color:var(--primary)")
+  result.rule ".sx-node", styleOf(
+    "border-radius:var(--r1);cursor:pointer;" &
+    "box-shadow:inset 0 0 0 var(--hair) transparent")
+  result.rule ".sx-node:hover", styleOf(
+    "background:var(--bg-2);box-shadow:inset 0 0 0 var(--hair) var(--border)")
+  result.rule ".sx-tag", styleOf("color:var(--accent);font-weight:600")
+  result.rule ".sx-leaf", styleOf("color:var(--secondary)")
+  result.rule ".sx-str", styleOf("color:var(--ok)")
+  # An atom something ELSE also contains. Sharing is the store's central claim
+  # and it was invisible; this is what makes it visible.
+  result.rule ".sx-shared", styleOf(
+    "border-bottom:var(--hair) dashed var(--accent)")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

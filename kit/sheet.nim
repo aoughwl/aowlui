@@ -427,6 +427,121 @@ proc kitSheet*(): Stylesheet =
   result.rule ".range", styleOf(
     "flex:0 0 auto;width:calc(var(--u) * 30);accent-color:var(--accent);" &
     "cursor:pointer")
+  # ── the dock: a TILING window manager ───────────────────────────────────────
+  #
+  # This is the lab's dock, rebuilt on the model a real window manager uses. The
+  # lab had four fixed regions — left, right, bottom, and a centre holding the
+  # page — and a panel could only be a member of one of them. That is a special
+  # case of something simpler: a SPLIT TREE. A split is a row or a column of
+  # weighted children, a child is either another split or a leaf holding one
+  # window, and the lab's layout is one particular tree. i3, sway and BSPWM all
+  # work this way, and it costs less code than the four-region version did
+  # because there is one recursive rule instead of four cases.
+  #
+  # Everything here is geometry and chrome. WHICH windows exist and where they
+  # sit is data the host holds; the kit only says what a split, a leaf, a
+  # divider and a floating window LOOK like.
+  result.rule ".dock", styleOf(
+    "position:relative;display:flex;flex:1 1 auto;min-width:0;min-height:0")
+  # A split is a flex box, and that is the whole tiling engine: weights are
+  # `flex-grow`, so a divider moves size between two siblings and every other
+  # branch of the tree is untouched. No pixel arithmetic, no reflow pass.
+  result.rule ".dock-split", styleOf(
+    "display:flex;flex:1 1 auto;min-width:0;min-height:0")
+  result.rule ".dock-split.is-col", styleOf("flex-direction:column")
+  result.rule ".dock-leaf", styleOf(
+    "display:flex;flex-direction:column;min-width:0;min-height:0;" &
+    "overflow:hidden")
+  # A divider is a hit target first and a line second. Two units wide reads as a
+  # hairline and is still catchable with a mouse; the accent only appears on
+  # hover, so a resting layout shows structure without showing controls.
+  result.rule ".dock-res", styleOf(
+    "flex:0 0 auto;background:transparent;position:relative;z-index:2;" &
+    motion)
+  result.rule ".dock-res.is-x", styleOf("width:var(--s2);cursor:col-resize")
+  result.rule ".dock-res.is-y", styleOf("height:var(--s2);cursor:row-resize")
+  result.rule ".dock-res:hover", styleOf("background:var(--accent)")
+  # ── a window ────────────────────────────────────────────────────────────────
+  # `.win` above is the floating card. A DOCKED window is the same thing without
+  # the shadow: a shadow means "above the page", and a tile is not above
+  # anything. Sharing the rule and overriding the shadow would say they are the
+  # same component; they are not, and the difference is the whole point of the
+  # shadow token.
+  result.rule ".dock-win", styleOf(
+    "display:flex;flex-direction:column;flex:1 1 auto;min-height:0;" &
+    "min-width:0;overflow:hidden;background:var(--bg-2);" &
+    "border:var(--hair) solid var(--border);border-radius:var(--r2)")
+  result.rule ".dock-bar", styleOf(
+    "display:flex;align-items:center;gap:var(--s2);flex:0 0 auto;" &
+    "height:var(--ctl);padding:0 var(--s2);user-select:none;cursor:grab;" &
+    "border-bottom:var(--hair) solid var(--border);color:var(--secondary)")
+  result.rule ".dock-bar:hover", styleOf("color:var(--primary)")
+  result.rule ".dock-ico", styleOf(
+    "flex:0 0 auto;opacity:.7;font-size:var(--fs-sm)")
+  result.rule ".dock-title", styleOf(
+    "font-weight:600;white-space:nowrap;overflow:hidden;" &
+    "text-overflow:ellipsis;font-size:var(--fs-sm)")
+  result.rule ".dock-actions", styleOf(
+    "display:flex;align-items:center;gap:var(--s1);margin-left:auto")
+  result.rule ".dock-body", styleOf(
+    "flex:1 1 auto;min-height:0;min-width:0;overflow:auto")
+  # Collapsed keeps the bar and drops the body, so a collapsed window is a title
+  # strip you can still drag — which is what makes collapsing useful rather than
+  # a worse close.
+  result.rule ".dock-win.is-collapsed", styleOf("flex:0 0 auto")
+  result.rule ".dock-win.is-collapsed .dock-body", styleOf("display:none")
+  result.rule ".dock-win.is-active", styleOf("border-color:var(--accent)")
+  # ── the floating layer ──────────────────────────────────────────────────────
+  # UNBOUND windows: outside the tree, positioned absolutely, above the tiles.
+  # The layer ignores the pointer so the tiling below stays usable, and each
+  # window takes it back — otherwise a floating layer covering the app would
+  # swallow every click that missed a window.
+  result.rule ".dock-float-layer", styleOf(
+    "position:absolute;inset:0;pointer-events:none;z-index:var(--z-float)")
+  result.rule ".dock-float", styleOf(
+    "position:absolute;pointer-events:auto;display:flex;flex-direction:column;" &
+    "min-width:calc(var(--u) * 30);min-height:calc(var(--u) * 20);" &
+    "box-shadow:var(--shadow);border-radius:var(--r2)")
+  # The resize corner. A floating window has no divider to drag, so it needs its
+  # own grip, and it is drawn rather than themed so it reads at any scale.
+  result.rule ".dock-grip", styleOf(
+    "position:absolute;right:0;bottom:0;width:var(--s4);height:var(--s4);" &
+    "cursor:nwse-resize;z-index:3")
+  result.rule ".dock-grip::after", styleOf(
+    "content:'';position:absolute;right:var(--s1);bottom:var(--s1);" &
+    "width:var(--s2);height:var(--s2);border-right:var(--rail) solid " &
+    "var(--border);border-bottom:var(--rail) solid var(--border)")
+  # ── drag feedback ───────────────────────────────────────────────────────────
+  # Three separate marks, because they answer three different questions: the
+  # GHOST says what you are carrying, the ZONE says which leaf you are over, and
+  # the EDGE says which side of it you will split. The lab had the first two and
+  # a bar for insert position; a tiling tree needs the third instead, because
+  # dropping is a direction rather than an index.
+  result.rule ".dock-ghost", styleOf(
+    "position:fixed;z-index:var(--z-drag);pointer-events:none;" &
+    "display:flex;align-items:center;gap:var(--s2);" &
+    "padding:var(--s1) var(--s3);border-radius:var(--r1);" &
+    "background:var(--bg-2);border:var(--hair) solid var(--accent);" &
+    "box-shadow:var(--shadow);font-size:var(--fs-sm)")
+  result.rule ".dock-zone", styleOf(
+    "position:fixed;z-index:var(--z-drop);pointer-events:none;opacity:0;" &
+    "border-radius:var(--r2);background:color-mix(in srgb, var(--accent) " &
+    "10%, transparent);border:var(--rail) solid var(--accent);" &
+    "transition:left .12s " & ease & ",top .12s " & ease &
+    ",width .12s " & ease & ",height .12s " & ease & ",opacity .12s " & ease)
+  result.rule ".dock-zone.is-on", styleOf("opacity:1")
+  result.rule ".dock-edge", styleOf(
+    "position:fixed;z-index:var(--z-drop);pointer-events:none;opacity:0;" &
+    "border-radius:var(--r1);background:var(--accent);" &
+    "transition:left .12s " & ease & ",top .12s " & ease &
+    ",width .12s " & ease & ",height .12s " & ease & ",opacity .12s " & ease)
+  result.rule ".dock-edge.is-on", styleOf("opacity:1")
+  # While a drag or a resize is live the cursor must not change under the
+  # pointer as it crosses other elements, or the gesture reads as having ended.
+  result.rule "body.is-dragging", styleOf("cursor:grabbing")
+  result.rule "body.is-dragging *", styleOf("cursor:grabbing!important")
+  result.rule "body.is-resizing-x *", styleOf("cursor:col-resize!important")
+  result.rule "body.is-resizing-y *", styleOf("cursor:row-resize!important")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

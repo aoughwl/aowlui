@@ -218,6 +218,13 @@ proc metricVars(t: Theme): string =
   # a rule spelling `2px` itself and quietly opting out of the system.
   result.add "--hair:1px;"
   result.add "--rail:2px;"
+  # Stacking order, as three named steps rather than magic numbers scattered
+  # through the sheet. A floating window is above the tiles; the drop feedback
+  # is above the floating windows, because you drop ONTO them; the thing
+  # following the cursor is above everything, because it is the cursor.
+  result.add "--z-float:40;"
+  result.add "--z-drop:60;"
+  result.add "--z-drag:80;"
   # type and controls, also scaled
   result.add "--fs:calc(var(--scale) * " & t.fontSize & ");"
   result.add "--fs-sm:calc(var(--fs) * 0.85);"

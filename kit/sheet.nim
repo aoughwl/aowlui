@@ -636,6 +636,63 @@ proc kitSheet*(): Stylesheet =
   result.rule ".anchored", styleOf(
     "position:relative;display:flex;flex-direction:column;" &
     "min-height:0;min-width:0")
+  # ── loading ─────────────────────────────────────────────────────────────────
+  #
+  # A page whose content arrives from a server starts as an empty box, and an
+  # empty box styled with the page background is indistinguishable from a
+  # broken one. This is meant to be rendered INTO THE HTML — before any script
+  # runs, so the first paint already says "working" — and removed once the app
+  # has something to show. That is the only reason it is a plain overlay rather
+  # than a component in the view: a view cannot draw itself before the code that
+  # draws views has loaded.
+  result.rule ".loading", styleOf(
+    "position:fixed;inset:0;z-index:var(--z-drag);display:flex;" &
+    "flex-direction:column;align-items:center;justify-content:center;" &
+    "gap:var(--s4);background:var(--bg);color:var(--secondary);" &
+    "transition:opacity .25s " & ease)
+  result.rule ".loading.is-done", styleOf("opacity:0;pointer-events:none")
+  result.rule ".spinner", styleOf(
+    "width:var(--s8);height:var(--s8);border-radius:50%;" &
+    "border:var(--rail) solid var(--border);" &
+    "border-top-color:var(--accent);" &
+    "animation:aowl-spin .8s linear infinite")
+  result.rule ".loading-label", styleOf(
+    "font-size:var(--fs-sm);letter-spacing:.08em;text-transform:uppercase")
+
+  # ── the memory monitor's chrome ─────────────────────────────────────────────
+  # The widget itself is `widgets/memory.js` — imperative, because it samples a
+  # runtime counter ten times a second and none of that is a fact about a store.
+  # What it looks like is still the kit's business.
+  result.rule ".mem", styleOf(
+    "display:flex;flex-direction:column;gap:var(--s1);padding:var(--s2);" &
+    "font-size:var(--fs-sm);color:var(--secondary);user-select:none")
+  result.rule ".mem-head", styleOf(
+    "display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2)")
+  result.rule ".mem-title", styleOf(
+    "font-weight:600;color:var(--primary);text-transform:uppercase;" &
+    "letter-spacing:.08em")
+  result.rule ".mem-total", styleOf(
+    "color:var(--tertiary);font-variant-numeric:tabular-nums")
+  result.rule ".mem-rows", styleOf(
+    "display:flex;flex-direction:column;gap:var(--s1)")
+  result.rule ".mem-row", styleOf(
+    "display:flex;align-items:center;gap:var(--s2)")
+  result.rule ".mem-label", styleOf(
+    "flex:0 0 auto;width:calc(var(--u) * 12);color:var(--tertiary)")
+  result.rule ".mem-track", styleOf(
+    "flex:1 1 auto;height:var(--s2);border-radius:var(--r-pill);" &
+    "background:var(--bg-3);overflow:hidden")
+  # Width is set inline by the widget; everything else is the theme's. The
+  # transition is what makes it read as a meter rather than as a redraw.
+  result.rule ".mem-fill", styleOf(
+    "height:100%;width:0;border-radius:var(--r-pill);background:var(--accent);" &
+    "transition:width .2s " & ease & ",background-color .2s " & ease)
+  result.rule ".mem-fill.is-warn", styleOf("background:var(--warning)")
+  result.rule ".mem-fill.is-danger", styleOf("background:var(--danger)")
+  result.rule ".mem-val", styleOf(
+    "flex:0 0 auto;width:calc(var(--u) * 16);text-align:right;" &
+    "font-variant-numeric:tabular-nums;color:var(--primary)")
+  result.rule ".mem-foot", styleOf("color:var(--tertiary)")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

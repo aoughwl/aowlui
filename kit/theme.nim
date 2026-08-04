@@ -32,6 +32,7 @@ type
     secondary*: string            ## secondary ink — labels, metadata
     tertiary*: string             ## optional third ink — hints, disabled
     accent*: string               ## the one saturated colour: selection, focus
+    warning*: string              ## a meter approaching its limit; not yet wrong
     danger*: string
 
     background*: string           ## the page / window surface
@@ -52,7 +53,7 @@ proc darkTheme*(): Theme =
   ## The lab's palette, re-expressed in the three-level system.
   Theme(
     primary: "#f4f1ea", secondary: "#aaa39a", tertiary: "#8e877d",
-    accent: "#5bd49c", danger: "#ff6b61",
+    accent: "#5bd49c", warning: "#ffc66d", danger: "#ff6b61",
     background: "#101214", backgroundSecondary: "#191b20",
     backgroundTertiary: "#0c0d0f",
     border: "rgba(244,241,234,.12)",
@@ -67,7 +68,7 @@ proc lightTheme*(): Theme =
   ## resized the UI would be a bug.
   Theme(
     primary: "#1d1d1f", secondary: "#72706b", tertiary: "#8c887f",
-    accent: "#178f5c", danger: "#b42318",
+    accent: "#178f5c", warning: "#a0641b", danger: "#b42318",
     background: "#f7f4ef", backgroundSecondary: "#ffffff",
     backgroundTertiary: "#eee9df",
     border: "rgba(30,28,24,.12)",
@@ -105,7 +106,7 @@ proc geom(t: var Theme) =
 proc nordTheme*(): Theme =
   result = Theme(
     primary: "#eceff4", secondary: "#a9b3c2", tertiary: "#7f8b9c",
-    accent: "#88c0d0", danger: "#bf616a",
+    accent: "#88c0d0", warning: "#ebcb8b", danger: "#bf616a",
     background: "#2e3440", backgroundSecondary: "#3b4252",
     backgroundTertiary: "#272c36",
     border: "rgba(236,239,244,.13)",
@@ -115,7 +116,7 @@ proc nordTheme*(): Theme =
 proc gruvboxTheme*(): Theme =
   result = Theme(
     primary: "#ebdbb2", secondary: "#bdae93", tertiary: "#928374",
-    accent: "#b8bb26", danger: "#fb4934",
+    accent: "#b8bb26", warning: "#fabd2f", danger: "#fb4934",
     background: "#1d2021", backgroundSecondary: "#282828",
     backgroundTertiary: "#16181a",
     border: "rgba(235,219,178,.14)",
@@ -125,7 +126,7 @@ proc gruvboxTheme*(): Theme =
 proc solarizedTheme*(): Theme =
   result = Theme(
     primary: "#073642", secondary: "#586e75", tertiary: "#93a1a1",
-    accent: "#268bd2", danger: "#dc322f",
+    accent: "#268bd2", warning: "#b58900", danger: "#dc322f",
     background: "#fdf6e3", backgroundSecondary: "#ffffff",
     backgroundTertiary: "#eee8d5",
     border: "rgba(7,54,66,.14)",
@@ -139,7 +140,7 @@ proc contrastTheme*(): Theme =
   ## kit without one cannot have it at all.
   result = Theme(
     primary: "#ffffff", secondary: "#e0e0e0", tertiary: "#bdbdbd",
-    accent: "#ffd400", danger: "#ff5252",
+    accent: "#ffd400", warning: "#ffa726", danger: "#ff5252",
     background: "#000000", backgroundSecondary: "#0d0d0d",
     backgroundTertiary: "#000000",
     border: "rgba(255,255,255,.55)",
@@ -184,6 +185,7 @@ proc colorVars(t: Theme): string =
   result.add "--secondary:" & t.secondary & ";"
   result.add "--tertiary:" & orElse(t.tertiary, t.secondary) & ";"
   result.add "--accent:" & t.accent & ";"
+  result.add "--warning:" & orElse(t.warning, t.accent) & ";"
   result.add "--danger:" & t.danger & ";"
   result.add "--bg:" & t.background & ";"
   result.add "--bg-2:" & t.backgroundSecondary & ";"
@@ -268,8 +270,15 @@ proc renderReset*(): string =
   result.add "html,body{margin:0;height:100%}\n"
   result.add "body{font-family:var(--font-ui);font-size:var(--fs);" &
              "background:var(--bg);color:var(--primary)}\n"
+  # The ONE animation the kit ships. A spinner needs keyframes and a keyframes
+  # block is not a rule, so it lives here in the raw reset rather than being
+  # forced into the Stylesheet type.
+  result.add "@keyframes aowl-spin{to{transform:rotate(360deg)}}\n"
   result.add "@media (prefers-reduced-motion:reduce){*{animation-duration:1ms!important;" &
              "transition-duration:1ms!important}}\n"
+  # A spinner clamped to 1ms is a stationary broken-looking ring, so under
+  # reduced motion the label carries the message alone.
+  result.add "@media (prefers-reduced-motion:reduce){.spinner{display:none}}\n"
   # ── SCROLLBARS, everywhere, from the tokens ─────────────────────────────────
   #
   # In the RESET rather than as a component, because a scrollbar is not

@@ -659,40 +659,46 @@ proc kitSheet*(): Stylesheet =
   result.rule ".loading-label", styleOf(
     "font-size:var(--fs-sm);letter-spacing:.08em;text-transform:uppercase")
 
-  # ── the memory monitor's chrome ─────────────────────────────────────────────
-  # The widget itself is `widgets/memory.js` — imperative, because it samples a
-  # runtime counter ten times a second and none of that is a fact about a store.
-  # What it looks like is still the kit's business.
-  result.rule ".mem", styleOf(
+  # ── the performance panel's chrome ──────────────────────────────────────────
+  # The widget itself is `widgets/perf.js` — imperative, because it samples
+  # counters ten times a second and none of that is a fact about a store. What
+  # it looks like is still the kit's business.
+  result.rule ".perf", styleOf(
     "display:flex;flex-direction:column;gap:var(--s1);padding:var(--s2);" &
     "font-size:var(--fs-sm);color:var(--secondary);user-select:none")
-  result.rule ".mem-head", styleOf(
+  result.rule ".perf-head", styleOf(
     "display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2)")
-  result.rule ".mem-title", styleOf(
+  result.rule ".perf-title", styleOf(
     "font-weight:600;color:var(--primary);text-transform:uppercase;" &
     "letter-spacing:.08em")
-  result.rule ".mem-total", styleOf(
+  result.rule ".perf-note", styleOf(
     "color:var(--tertiary);font-variant-numeric:tabular-nums")
-  result.rule ".mem-rows", styleOf(
+  result.rule ".perf-rows", styleOf(
     "display:flex;flex-direction:column;gap:var(--s1)")
-  result.rule ".mem-row", styleOf(
+  result.rule ".perf-row", styleOf(
     "display:flex;align-items:center;gap:var(--s2)")
-  result.rule ".mem-label", styleOf(
+  result.rule ".perf-label", styleOf(
     "flex:0 0 auto;width:calc(var(--u) * 12);color:var(--tertiary)")
-  result.rule ".mem-track", styleOf(
+  result.rule ".perf-track", styleOf(
     "flex:1 1 auto;height:var(--s2);border-radius:var(--r-pill);" &
     "background:var(--bg-3);overflow:hidden")
   # Width is set inline by the widget; everything else is the theme's. The
   # transition is what makes it read as a meter rather than as a redraw.
-  result.rule ".mem-fill", styleOf(
+  result.rule ".perf-fill", styleOf(
     "height:100%;width:0;border-radius:var(--r-pill);background:var(--accent);" &
     "transition:width .2s " & ease & ",background-color .2s " & ease)
-  result.rule ".mem-fill.is-warn", styleOf("background:var(--warning)")
-  result.rule ".mem-fill.is-danger", styleOf("background:var(--danger)")
-  result.rule ".mem-val", styleOf(
+  result.rule ".perf-fill.is-warn", styleOf("background:var(--warning)")
+  result.rule ".perf-fill.is-danger", styleOf("background:var(--danger)")
+  # Tabular figures, so a number changing ten times a second does not make the
+  # row jitter sideways -- which is the difference between a reading and a
+  # distraction.
+  result.rule ".perf-val", styleOf(
     "flex:0 0 auto;width:calc(var(--u) * 16);text-align:right;" &
     "font-variant-numeric:tabular-nums;color:var(--primary)")
-  result.rule ".mem-foot", styleOf("color:var(--tertiary)")
+  result.rule ".perf-val.is-wide", styleOf(
+    "flex:1 1 auto;width:auto;color:var(--secondary)")
+  result.rule ".perf-val.is-warn", styleOf("color:var(--warning)")
+  result.rule ".perf-val.is-danger", styleOf("color:var(--danger)")
   result.rule ".sr-only", styleOf(
     "position:absolute;width:1px;height:1px;padding:0;margin:-1px;" &
     "overflow:hidden;clip-path:inset(50%);white-space:nowrap")

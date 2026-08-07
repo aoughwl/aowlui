@@ -527,8 +527,19 @@ proc kitSheet*(): Stylesheet =
     "text-overflow:ellipsis;font-size:var(--fs-sm)")
   result.rule ".dock-actions", styleOf(
     "display:flex;align-items:center;gap:var(--s1);margin-left:auto")
+  # A COLUMN FLEX CONTAINER, not a block. A dock window's body holds things that
+  # are supposed to FILL it — an editor, a preview, a log — and `.fill` says so
+  # with `flex:1 1 auto`. That declaration is inert unless the parent is a flex
+  # container, so as a plain block this gave every one of them CONTENT height:
+  # Monaco mounts into an empty div, an empty div is 0 tall, and the editor
+  # rendered at zero height with nothing in the CSS looking wrong.
+  #
+  # `.win-body` and `.pane-body` stay blocks deliberately — they hold flowing,
+  # scrollable content, and a flex column there would fight the scroll. The dock
+  # is the one body whose children are panes rather than prose.
   result.rule ".dock-body", styleOf(
-    "flex:1 1 auto;min-height:0;min-width:0;overflow:auto")
+    "display:flex;flex-direction:column;flex:1 1 auto;" &
+    "min-height:0;min-width:0;overflow:auto")
   # Collapsed keeps the bar and drops the body, so a collapsed window is a title
   # strip you can still drag — which is what makes collapsing useful rather than
   # a worse close.
